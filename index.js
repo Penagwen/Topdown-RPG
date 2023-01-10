@@ -1,4 +1,4 @@
-const canvas = document.querySelector("canvas");
+const canvas = document.querySelector("canvas"); 
 const c = canvas.getContext("2d");
 
 canvas.width = window.innerWidth;
@@ -29,6 +29,7 @@ class Sprite{
 
         this.loaded = false;
         this.frame = 0;
+        this.animationBuffer = 0;
 
         this.sprite = new Image();
         this.sprite.onload = () => {
@@ -40,19 +41,37 @@ class Sprite{
         this.cropbox = cropbox;
         this.animationName = animationName;
         this.direction = "down";
+        this.flip = false;
+        this.completedLoop = 0;
     }
     draw(){
         if(!this.loaded){ return; }
 
         const animationData = eval(`this.cropbox.${this.animationName}.${this.direction}`);
 
+        c.save();
         c.imageSmoothingEnabled = false;
-        //c.drawImage(this.sprite, 50 * this.frame, this.cropbox.position[this.animationName][this.direction].y, 50, 50, canvas.width/2-45, canvas.height/2-50, 95, 100);
+        if(this.flip){
+            c.scale(-1, 1);
+            c.drawImage(this.sprite, this.frame * (this.sprite.width/6), animationData.position.y * (this.sprite.height/10), this.sprite.width/6, this.sprite.height/10, -canvas.width/2 - 100, canvas.height/2, 95, 100);
+        }else{
+            c.drawImage(this.sprite, this.frame * (this.sprite.width/6), animationData.position.y * (this.sprite.height/10), this.sprite.width/6, this.sprite.height/10, canvas.width/2, canvas.height/2, 95, 100);
+        }
+        c.restore();
 
         this.nextFrame();
     }
     nextFrame(){
-        this.frame = this.frame + 1 > this.cropbox[this.animationName][this.direction].frames ? 0 : this.frame + 1;
+        if(this.animationBuffer > 4){
+            this.frame = this.frame + 1 >= this.cropbox[this.animationName][this.direction].frames ? 0 : this.frame + 1;
+            this.animationBuffer = 0;
+            this.completedLoop ++;
+        }else{ this.animationBuffer ++; }
+
+        if(this.completedLoop > 4 && this.attack){
+            this.attack = false
+            this.completedLoop = 0;
+        }
     }
 }
 
@@ -70,7 +89,7 @@ class Player extends Sprite{
                     up: {
                         position: {
                             x: 0,
-                            y: 200,
+                            y: 2,
                         },
                         frames: 6,
                     },
@@ -84,7 +103,7 @@ class Player extends Sprite{
                     horizontally: {
                         position: {
                             x: 0,
-                            y: 100,
+                            y: 1,
                         },
                         frames: 6,
                     },
@@ -93,21 +112,21 @@ class Player extends Sprite{
                     up: {
                         position: {
                             x: 0,
-                            y: 600,
+                            y: 5,
                         },
                         frames: 6,
                     },
                     down: {
                         position: {
                             x: 0,
-                            y: 400,
+                            y: 3,
                         },
                         frames: 6,
                     },
                     horizontally: {
                         position: {
                             x: 0,
-                            y: 500,
+                            y: 4,
                         },
                         frames: 6,
                     },
@@ -116,21 +135,21 @@ class Player extends Sprite{
                     up: {
                         position: {
                             x: 0,
-                            y: 900,
+                            y: 8,
                         },
                         frames: 4,
                     },
                     down: {
                         position: {
                             x: 0,
-                            y: 700,
+                            y: 6,
                         },
                         frames: 4,
                     },
                     horizontally: {
                         position: {
                             x: 0,
-                            y: 800,
+                            y: 7,
                         },
                         frames: 4,
                     },
@@ -138,7 +157,7 @@ class Player extends Sprite{
                 death: {
                     position: {
                         x: 0,
-                        y: 1000,
+                        y: 9,
                     },
                     frames: 3,
                 },
@@ -149,6 +168,7 @@ class Player extends Sprite{
         this.size = size;
         this.velocity = velocity;
 
+        this.attack = false;
         this.speed = 3;
     }
     update(){
@@ -159,21 +179,38 @@ class Player extends Sprite{
         let halfSpeed = 1;
         if((keys.w.pressed || keys.s.pressed) && (keys.a.pressed || keys.d.pressed)){ halfSpeed = 1.5;}
 
+        
+        this.animationName = "idle";
+        
+
         if(keys.w.pressed){
             this.velocity.y += this.speed/halfSpeed;
+            this.animationName = "running";
+            this.direction = "up";
         }
         if(keys.s.pressed){
             this.velocity.y -= this.speed/halfSpeed;
+            this.animationName = "running";
+            this.direction = "down";
         }
         if(keys.a.pressed){
             this.velocity.x += this.speed/halfSpeed;
+            this.animationName = "running";
+            this.direction = "horizontally";
+            this.flip = true;
         }
         if(keys.d.pressed){
             this.velocity.x -= this.speed/halfSpeed;
+            this.animationName = "running";
+            this.direction = "horizontally";
+            this.flip = false;
         }
 
-        this.position.x -= this.velocity.x;
-        this.position.y -= this.velocity.y;
+        if(this.attack){ this.animationName = "attack" }
+        else{
+            this.position.x -= this.velocity.x;
+            this.position.y -= this.velocity.y;
+        }
         this.velocity.x = 0;
         this.velocity.y = 0;
     }
@@ -181,8 +218,8 @@ class Player extends Sprite{
 
 const camera = new Camera({
     position: {
-        x: 1200,
-        y: 1350,
+        x: 0,
+        y: 0,
     },
     size: {
         width: canvas.width/30*16,
@@ -193,7 +230,7 @@ const camera = new Camera({
 const player = new Player({
     position: {
         x: 1200,
-        y: 1200,
+        y: 1350,
     },
     size: {
         width: 16,
@@ -245,6 +282,12 @@ window.onkeyup = (e) => {
             keys[key].pressed = false;
         }
     })
+}
+
+window.onmousedown = (e) => {
+    player.attack = true;
+    player.completedLoop = 0;
+    player.frame = 0;
 }
 
 
