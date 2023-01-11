@@ -68,7 +68,7 @@ class Sprite{
             this.completedLoop ++;
         }else{ this.animationBuffer ++; }
 
-        if(this.completedLoop > 4 && this.attack){
+        if(this.completedLoop >= 4 && this.attack){
             this.attack = false
             this.completedLoop = 0;
         }
@@ -182,7 +182,7 @@ class Player extends Sprite{
         
         this.animationName = "idle";
         
-
+        if(keys.p.pressed){ this.attack = true; }
         if(keys.w.pressed){
             this.velocity.y += this.speed/halfSpeed;
             this.animationName = "running";
@@ -206,13 +206,21 @@ class Player extends Sprite{
             this.flip = false;
         }
 
+        if((keys.w.pressed && keys.s.pressed) || (keys.a.pressed && keys.d.pressed)){ this.animationName = "idle"; }
+
         if(this.attack){ this.animationName = "attack" }
         else{
+            this.checkCollision();
             this.position.x -= this.velocity.x;
             this.position.y -= this.velocity.y;
         }
+
         this.velocity.x = 0;
         this.velocity.y = 0;
+    }
+    checkCollision(){
+        c.fillStyle = "rgba(255, 0, 0, 0.5)";
+        c.fillRect(1200 - camera.position.x, 1200 - camera.position.y, canvas.width/30, canvas.height/30);
     }
 }
 
@@ -253,6 +261,9 @@ const keys = {
         pressed: false,
     },
     d: {
+        pressed: false,
+    },
+    p: {
         pressed: false,
     },
 }
