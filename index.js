@@ -219,8 +219,32 @@ class Player extends Sprite{
         this.velocity.y = 0;
     }
     checkCollision(){
-        c.fillStyle = "rgba(255, 0, 0, 0.5)";
-        c.fillRect(1200 - camera.position.x, 1200 - camera.position.y, canvas.width/30, canvas.height/30);
+        
+    }
+}
+
+class Particles extends Sprite{
+    constructor(position, size){
+        super({
+            position: position,
+            size: size,
+            spriteSheet: "img/particles/dust_particles_01.png",
+            cropbox: {
+                walking: {
+                    position: {
+                        x: 0,
+                        y: 0,
+                    },
+                    frames: 4,
+                }
+            },
+            animationName: walking,
+        });
+        this.position = position;
+        this.size = size;
+    }
+    update(){
+        this.draw();
     }
 }
 
@@ -250,6 +274,8 @@ const player = new Player({
     },
 });
 
+const particles = [];
+
 const keys = {
     w: {
         pressed: false,
@@ -273,6 +299,10 @@ function Update(){
     drawMap();
 
     player.update();
+
+    particles.forEach((particle, index) => {
+        
+    })
 
     camera.update();
 
